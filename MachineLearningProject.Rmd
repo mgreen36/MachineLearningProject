@@ -1,0 +1,201 @@
+---
+title: "MachineLearningProject"
+author: "Michael Green"
+date: "June 14, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(caret)
+library(plyr)
+library(randomForest)
+library(rpart)
+
+```
+##Overview
+This analysis creates a prediction model for the Human Activity Recognition(HAR) study on weightlifting. The study description is at http://groupware.les.inf.puc-rio.br/har. The goal of the study was to record data that could be used to determine the quality of an ecercise movement.
+The study used sensors to record data when subjects performed a specified exercise in different ways. The different movements used to execute the exercise were graded as A,B,C,D,E. The training dataset provided includes the grade and sensor readings for each movement execution. From this data we want to create a prediction model which can correctly predit grades for movements using a test data which does not include a grade.
+
+###Loading the Data
+
+The data is provided by the HAR and we are directly able to load it from the specified url's. The training data includes the grade for each movement in the classe column. The test data does not include the classe column.
+
+```{r echo =TRUE}
+testing <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+training <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv")
+
+dim(training)
+dim(testing)
+
+```
+
+
+###Cleaning the Data
+
+We want to eliminate unnecessary columns, columns which are overwhelmingly NA or empty, highly correlated columns
+
+#####Remove unneeded columns. The first 6 columns from the training and testing datasets
+'X',  'user_name', 'raw_timestamp_part_1', 'raw_timestamp_part_2', 'cvtd_timestamp', 'new_window'
+
+```{r echo=TRUE}
+
+testing <- subset(testing, select=-c(1:7))
+training <- subset(training, select=-c(1:7))
+dim(testing)
+dim(training)
+```
+
+####remove  columns which are 95% or greater 'NA' or empty values
+
+```{r echo=TRUE}
+threshold_val <- 0.95 * dim(training)[1]
+
+
+include_cols <- !apply(training, 2, function(y) sum(is.na(y)) > threshold_val || sum(y=="") > threshold_val)
+training <- training[, include_cols]
+```
+
+```{r echo=TRUE}
+nzv <- nearZeroVar(training, saveMetrics=TRUE)
+nzv <- nearZeroVar(training, saveMetrics = TRUE)
+training <- training[ , nzv$nzv==FALSE] 
+dim(training)
+```
+
+####Remove highly correlated columns
+
+```{r echo = TRUE}
+corr_matrix <- abs(cor(training[,-dim(training)[2]]))
+
+diag(corr_matrix) <- 0
+
+correlated_col <- findCorrelation(corr_matrix, verbose = FALSE , cutoff = .95)
+training <- training[, -c(correlated_col)]
+dim(training)
+```
+
+##Partitioning the Data
+
+Divide the traing data into training and test partitions. The test parition will be used to determine the accuracy of different methods used to build prediction models.
+```{r echo=TRUE}
+
+set.seed(32233)
+inTrain <- createDataPartition(y=training$classe, p=0.7, list=FALSE)
+mtrain <- training[inTrain, ] 
+mtest <- training[-inTrain, ]
+dim(mtrain) 
+dim(mtest)
+```
+
+##Model 
+We want to develop prediction models using different methods to find the best fit. 
+
+####Create a classification tree model.
+
+```{r echo=TRUE}
+
+rpartFit <- rpart(classe ~ ., data=mtrain, method="class")
+
+rpartFit$cptable
+
+plotcp(rpartFit)
+
+
+```
+
+
+```
+
+The plot and cptable show that the tree should not be pruned. The cross-validation error of 0.3972129 + or - the standard deviation (xstd) of 0.005377592 is between 0.4025905 and
+0.3918353. There are no other splits with cross validation values in this range.
+
+####create a model using boosting
+
+```{r echo=TRUE}
+fitControl <- trainControl(method = "repeatedcv",
+                           number = 5,
+                           repeats = 1)
+
+gbmFit <- train(classe ~ ., data=mtrain, method = "gbm",
+                 trControl = fitControl,
+                 verbose = FALSE)
+
+
+gbmFit$finalModel
+
+plot(gbmFit, ylim=c(0.9, 1))
+
+```
+
+####Create a random forest mdoel
+
+```{r echo=TRUE}
+
+
+rfFit <- randomForest(classe~., data=mtrain, importance=TRUE)
+rfFit
+
+importance(rfFit,type=2)
+
+plot(rfFit,main="Random Forest Plot")
+
+```
+
+##Predict
+
+####prediction accuracy for the classification tree model
+
+```{r echo=TRUE}
+pred_r <- predict(rpartFit, newdata=mtest,type="class")
+cm_rp <- confusionMatrix(pred_r, mtest$classe)
+cm_rp$overall
+
+```
+
+####prediction mode for the random forest.
+
+```{r echo=TRUE}
+pred_rf <- predict(rfFit, newdata=mtest)
+
+cm_rf <- confusionMatrix(pred_rf, mtest$classe)
+cm_rf$overall
+
+```
+####prediction mode for boosting.
+
+```{r echo=TRUE}
+pred_g <- predict(gbmFit, newdata=mtest)
+cm_b <- confusionMatrix(pred_g, mtest$classe)
+cm_b$overall
+```
+
+##Predict values for the test data 
+
+#### using random forest
+```{r echo=TRUE}
+predict(rfFit, newdata=testing)
+
+```
+
+#### using boosting
+
+```{r echo=TRUE}
+predict(gbmFit, newdata=testing)
+
+```
+
+#### using classification tree
+
+```{r echo=TRUE}
+predict(rpartFit, newdata=testing,type="class")
+
+```
+
+####Conclusion
+We were able to create accurate prediction models using both random forest and boosting. Our attempt to create a model using a configuration tree was less accurate.
+The random forest and boosting models predicted the same results for the test data.
+For random forest accuracy was 0.9958 
+For boosting accuracy was 0.9605
+For classification tree accuracy was 0.7254
+
