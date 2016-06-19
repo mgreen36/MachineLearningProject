@@ -14,10 +14,12 @@ library(rpart)
 
 ```
 ##Overview
-This analysis creates a prediction model for the Human Activity Recognition(HAR) study on weightlifting. The study description is at http://groupware.les.inf.puc-rio.br/har. The goal of the study was to record data that could be used to determine the quality of an ecercise movement.
-The study used sensors to record data when subjects performed a specified exercise in different ways. The different movements used to execute the exercise were graded as A,B,C,D,E. The training dataset provided includes the grade and sensor readings for each movement execution. From this data we want to create a prediction model which can correctly predit grades for movements using a test data which does not include a grade.
+This analysis creates a prediction model for the Human Activity Recognition(HAR) study on weightlifting. The study description is at http://groupware.les.inf.puc-rio.br/har. The goal of the study was to record data that could be used to determine the quality of an exercise movement.
+The study used sensors to record data when subjects performed a specified weightlifting exercise in different ways. The different movements used to execute the exercise were graded as A,B,C,D,E. The provided training dataset includes the grade and sensor readings for each movement execution. From this data we want to create a prediction model which can correctly predit grades for movements. The accuracy of the prediction models are determined by testing against a dataset partioned from the training dataset. 
 
-###Loading the Data
+##Data Processing
+
+####Loading the Data
 
 The data is provided by the HAR and we are directly able to load it from the specified url's. The training data includes the grade for each movement in the classe column. The test data does not include the classe column.
 
@@ -142,7 +144,6 @@ rfFit
 importance(rfFit,type=2)
 ```
 
-####Random Forest plot
 
 ```{r echo=TRUE}
 plot(rfFit,main="Random Forest Plot")
