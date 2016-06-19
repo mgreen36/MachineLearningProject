@@ -78,7 +78,7 @@ dim(training)
 
 ##Partitioning the Data
 
-Divide the traing data into training and test partitions. The test parition will be used to determine the accuracy of different methods used to build prediction models.
+Divide the training data into training and test partitions. The test parition will be used to determine the accuracy of different methods used to build prediction models.
 ```{r echo=TRUE}
 
 set.seed(32233)
@@ -89,10 +89,12 @@ dim(mtrain)
 dim(mtest)
 ```
 
-##Model 
-We want to develop prediction models using different methods to find the best fit. 
+##Create Prediction Models
 
-####Create a classification tree model.
+We want to develop prediction models using different methods to find the best fit.
+We will create models using classification tree, boosting and random forest.
+
+####Createclassification tree model.
 
 ```{r echo=TRUE}
 
@@ -105,11 +107,9 @@ plotcp(rpartFit)
 
 ```
 
-
-```
-
 The plot and cptable show that the tree should not be pruned. The cross-validation error of 0.3972129 +/- the standard deviation (xstd) of 0.005377592 is between 0.4025905 and
 0.3918353. There are no other splits with cross validation values in this range.
+
 
 ####create a model using boosting
 
@@ -124,7 +124,7 @@ gbmFit <- train(classe ~ ., data=mtrain, method = "gbm",
 
 ```
 
-####Boosting plot
+
 
 ```{r excho=TRUE}
 plot(gbmFit, ylim=c(0.9, 1))
@@ -149,7 +149,8 @@ plot(rfFit,main="Random Forest Plot")
 ```
 
 
-##Predict 
+##Determine Model Accuracy
+
 Find the accuracy of our models by predicting against the test partition created from the training data.
 
 ####prediction accuracy for the classification tree model
@@ -161,7 +162,7 @@ cm_rp$overall
 
 ```
 
-####prediction mode for the random forest.
+####prediction accuracy for the random forest.
 
 ```{r echo=TRUE}
 pred_rf <- predict(rfFit, newdata=mtest)
@@ -170,7 +171,7 @@ cm_rf <- confusionMatrix(pred_rf, mtest$classe)
 cm_rf$overall
 
 ```
-####prediction mode for boosting.
+####prediction accuracy for boosting.
 
 ```{r echo=TRUE}
 pred_g <- predict(gbmFit, newdata=mtest)
@@ -201,9 +202,13 @@ predict(rpartFit, newdata=testing,type="class")
 ```
 
 ##Conclusion
+
 The Random Forest model was the most accurate.
+
 We were able to create accurate prediction models using both random forest and boosting. Our attempt to create a model using a configuration tree was less accurate.
+
 The random forest and boosting models predicted the same results for the test data.
+
 For random forest accuracy was 0.9958 
 For boosting accuracy was 0.9605
 For classification tree accuracy was 0.7254
