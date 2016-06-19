@@ -1,0 +1,116 @@
+---
+title: "MachineLearningProject"
+author: "Michael Green"
+date: "June 14, 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(caret)
+library(plyr)
+library(randomForest)
+library(rpart)
+
+```
+###Summary
+
+###Loading the Data
+
+
+```{r echo =TRUE}
+testing <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+training <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv")
+
+dim(training)
+dim(testing)
+
+```
+
+
+###Cleaning the Data
+
+```{r echo=TRUE}
+# Removing the starting 6 columns from the training and testing datasets :
+#  'X',  'user_name', 'raw_timestamp_part_1', 'raw_timestamp_part_2', 'cvtd_timestamp', 'new_window'
+testing <- subset(testing, select=-c(1:7))
+training <- subset(training, select=-c(1:7))
+dim(testing)
+dim(training)
+```
+
+remove  columns which are 95% or greater 'NA' or empty values
+
+```{r echo=TRUE}
+threshold_val <- 0.95 * dim(training)[1]
+
+
+include_cols <- !apply(training, 2, function(y) sum(is.na(y)) > threshold_val || sum(y=="") > threshold_val)
+training <- training[, include_cols]
+```
+
+```{r echo=TRUE}
+nzv <- nearZeroVar(training, saveMetrics=TRUE)
+nzv <- nearZeroVar(training, saveMetrics = TRUE)
+training <- training[ , nzv$nzv==FALSE] 
+dim(training)
+```
+
+
+
+
+remove highly correlated columns
+
+```{r echo = TRUE}
+corr_matrix <- abs(cor(training[,-dim(training)[2]]))
+
+diag(corr_matrix) <- 0
+
+correlated_col <- findCorrelation(corr_matrix, verbose = FALSE , cutoff = .95)
+training <- training[, -c(correlated_col)]
+dim(training)
+```
+
+###Partitioning the Data
+
+```{r echo=TRUE}
+
+set.seed(32233)
+inTrain <- createDataPartition(y=training$classe, p=0.7, list=FALSE)
+mtrain <- training[inTrain, ]; 
+mtest <- training[-inTrain, ]
+dim(mtrain); 
+dim(mtest)
+```
+
+###Model 
+
+```{r echo=TRUE}
+#rpartFit <- train(classe ~ ., data = mtrain,
+#                 method = "rpart")
+rpartFit <- rpart(classe ~ ., data=mtrain, method="class")
+```
+
+```{r echo=TRUE}
+pred_r <- predict(rpartFit, newdata=mtest,type="class")
+cm <- confusionMatrix(pred_r, mtest$classe)
+cm
+
+```
+```{r echo=TRUE}
+
+#rfFit <- train(classe ~., method="rf", data = mtrain)
+
+rfFit <- randomForest(classe~., data=mtrain, importance=TRUE)
+rfFit
+```
+
+```{r echo=TRUE}
+pred_rf <- predict(rfFit, newdata=mtest)
+# Showing the Confusion Matrix here :
+confusionMatrix(pred_rf, mtest$classe)
+```
+```{r echo=TRUE}
+pred_t <- predict(rfFit, newdata=testing)
+pred_t
+```
