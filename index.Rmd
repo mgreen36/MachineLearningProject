@@ -15,7 +15,7 @@ library(rpart)
 ```
 ##Overview
 This analysis creates a prediction model for the Human Activity Recognition(HAR) study on weightlifting. The study description is at http://groupware.les.inf.puc-rio.br/har. The goal of the study was to record data that could be used to determine the quality of an exercise movement.
-The study used sensors to record data when subjects performed a specified weightlifting exercise in different ways. The different movements used to execute the exercise were graded as A,B,C,D,E. The provided training dataset includes the grade and sensor readings for each movement execution. From this data we want to create a prediction model which can correctly predit grades for movements. The accuracy of the prediction models are determined by testing against a dataset partioned from the training dataset. 
+The study used sensors to record data when subjects performed a specified weightlifting exercise in different ways. The different movements used to execute the exercise were graded as A,B,C,D,E. The provided training dataset includes the grade and sensor readings for each movement execution. From this data we want to create a prediction model which can correctly predit grades for movements. The accuracy of the prediction models are determined by testing against a dataset partitioned from the training dataset. 
 
 ##Data Processing
 
@@ -77,7 +77,8 @@ correlated_col <- findCorrelation(corr_matrix, verbose = FALSE , cutoff = .95)
 training <- training[, -c(correlated_col)]
 dim(training)
 ```
-
+ 
+ 
 ##Partitioning the Data
 
 Divide the training data into training and test partitions. The test parition will be used to determine the accuracy of different methods used to build prediction models.
